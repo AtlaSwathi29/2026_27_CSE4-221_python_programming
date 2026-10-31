@@ -1,141 +1,149 @@
-# Case Study 3: Student Result Analyzer
+# Case Study 4: Inventory and Billing System
 
-> **Files:** [`student_result_analyzer.py`](student_result_analyzer.py) · [`test_student_result_analyzer.py`](test_student_result_analyzer.py) · [`output.txt`](output.txt)
+> **Files:** [`inventory_billing.py`](inventory_billing.py) · [`test_inventory_billing.py`](test_inventory_billing.py) · [`output.txt`](output.txt)
 
 ## 1. Problem Statement
 
-A department needs a program that takes the marks of every student in five subjects and prepares a result sheet: total, percentage, grade, pass/fail status and rank. It must also report class statistics such as the average, standard deviation, pass percentage, the class topper(s) and the highest scorer in each subject.
+A retail shop wants software to keep track of its products and generate customer bills. Each product has a price, a stock quantity and a GST rate. A bill must check stock, apply a volume discount (5% for subtotal of Rs. 2000 or more, 10% for Rs. 5000 or more), calculate GST on the discounted amount, update the stock and warn about items that are running low.
 
 ## 2. Objectives
 
-- Process lists and dictionaries of student data with loops and built-in functions (`sum`, `min`, `max`, `sorted`).
-- Implement a grading scale using conditional statements.
-- Rank students with ties handled correctly (1, 1, 3 style ranking).
-- Compute basic statistics (mean, standard deviation, pass percentage) without external libraries.
-- Validate input (number of marks and range 0-100).
+- Maintain an inventory in a dictionary of dictionaries.
+- Implement a billing algorithm with discount slabs and per-item tax calculation.
+- Make the operation safe: stock is reduced only when the whole bill is valid (all-or-nothing).
+- Format a neat, aligned bill using f-strings.
+- Generate a low-stock report for restocking decisions.
 
 ## 3. Assumptions
 
-- Five subjects (Maths, Physics, Chemistry, English, Python), each out of 100.
-- A student passes only if every subject mark is at least 40; otherwise the result is FAIL and the grade is F.
-- Grade scale on percentage: O >= 90, A+ >= 80, A >= 70, B >= 60, C >= 50, P >= 40, otherwise F.
-- Rank is based on total marks among all students; equal totals share the same rank and the next rank is skipped.
-- Standard deviation is the population standard deviation of the totals.
+- Prices are in rupees; GST rate is between 0 and 28 percent and is different for each product.
+- The discount is decided by the subtotal before tax and is applied to every item equally.
+- GST is calculated on the price after discount.
+- Low-stock limit is fewer than 5 units.
+- Data is held in memory; a single cashier uses the program.
 
 ## 4. Algorithm
 
-1. Start. Read the students' names and marks (or use the demo data).
-2. For each student validate that there are exactly 5 marks and each is between 0 and 100.
-3. total = sum of marks; percentage = total / 5 (rounded to 2 decimals).
-4. If the lowest mark >= 40 then result = PASS and grade comes from the percentage; otherwise result = FAIL and grade = F.
-5. Sort students by total (highest first, then by name).
-6. Assign ranks: a student with the same total as the previous one gets the same rank, otherwise rank = position.
-7. Compute class average, standard deviation = sqrt(mean of squared differences), pass percentage, topper list and the best mark in each subject.
-8. Print the result table and statistics. Stop.
+1. Start. Create an empty product dictionary and add products with code, name, price, stock and GST%.
+2. Read the cart as a list of (code, quantity); stop with an error if it is empty.
+3. For every item check that the product exists, quantity > 0 and quantity <= stock. Add price x quantity to the subtotal.
+4. Choose the discount: 10% if subtotal >= 5000, 5% if subtotal >= 2000, otherwise 0.
+5. For every item: GST = (amount x (1 - discount rate)) x GST% / 100; add to the GST total.
+6. Only now reduce the stock of every purchased item.
+7. total = subtotal - discount + GST. Print the formatted bill.
+8. Low-stock report: list products whose stock is below 5. Stop.
 
 ## 5. Pseudocode
 
 ```text
-FUNCTION analyse(students)
-    records <- empty list
-    FOR EACH (name, marks) IN students
-        validate marks (5 values, each 0..100)
-        total <- SUM(marks)
-        percentage <- ROUND(total / 5, 2)
-        IF MIN(marks) >= 40 THEN result <- "PASS"; grade <- grade_of(percentage)
-        ELSE result <- "FAIL"; grade <- "F"
-        add record to records
-    SORT records by total (descending), then name
-    FOR i FROM 0 TO length(records) - 1
-        IF i > 0 AND records[i].total = records[i-1].total THEN
-            records[i].rank <- records[i-1].rank
-        ELSE records[i].rank <- i + 1
-    RETURN records
+FUNCTION make_bill(items)
+    IF items is empty THEN error "Cart is empty"
+    subtotal <- 0
+    FOR EACH (code, qty) IN items
+        IF code not in products THEN error "Product not found"
+        IF qty <= 0 THEN error "Quantity must be positive"
+        IF qty > products[code].stock THEN error "Insufficient stock"
+        amount <- price * qty;  subtotal <- subtotal + amount
+    rate <- 0.10 IF subtotal >= 5000, 0.05 IF subtotal >= 2000, ELSE 0
+    discount <- subtotal * rate
+    gst <- SUM over items of (amount * (1 - rate) * gst_percent / 100)
+    FOR EACH (code, qty) IN items: products[code].stock <- products[code].stock - qty
+    RETURN subtotal, discount, gst, total = subtotal - discount + gst
 END FUNCTION
 ```
 
 ## 6. Flowchart
 
-### 6.1 Result analysis
+### 6.1 Generate a bill
 
 ```mermaid
 flowchart TD
-    A(["Start"]) --> B[/"Read name and 5 marks of every student"/]
-    B --> C{"Exactly 5 marks, each between 0 and 100?"}
-    C -- No --> ERR[/"Show error message"/]
-    C -- Yes --> D["total = sum of marks, percentage = total / 5"]
-    D --> E{"Lowest mark at least 40?"}
-    E -- Yes --> F["result = PASS, grade from percentage"]
-    E -- No --> G["result = FAIL, grade = F"]
-    F --> H["Sort students by total, highest first"]
-    G --> H
-    H --> I["Give ranks - equal totals share a rank"]
-    I --> J["Compute average, standard deviation, pass percentage, toppers"]
-    J --> K[/"Print result table and statistics"/]
-    K --> Z(["End"])
+    A(["Start"]) --> B[/"Read cart items: code and quantity"/]
+    B --> C{"Cart empty?"}
+    C -- Yes --> ERR[/"Show error message"/]
+    C -- No --> D["Take next item"]
+    D --> E{"Product exists and quantity above 0?"}
+    E -- No --> ERR
+    E -- Yes --> F{"Quantity within stock?"}
+    F -- No --> ERR
+    F -- Yes --> G["amount = price x quantity, add to subtotal"]
+    G --> H{"More items?"}
+    H -- Yes --> D
+    H -- No --> I["Find discount slab: 0, 5 or 10 percent"]
+    I --> J["GST = discounted amount x GST rate of each item"]
+    J --> K["Reduce stock of all items"]
+    K --> L["total = subtotal - discount + GST"]
+    L --> M[/"Print bill"/]
+    M --> Z(["End"])
     ERR --> Z
 ```
 
 ## 7. Source Code
 
-The complete, commented program is in [`student_result_analyzer.py`](student_result_analyzer.py). It uses only the Python standard library (Python 3.8 or later).
+The complete, commented program is in [`inventory_billing.py`](inventory_billing.py). It uses only the Python standard library (Python 3.8 or later).
 
 ```bash
-python student_result_analyzer.py          # interactive menu / input
-python student_result_analyzer.py --demo   # automatic sample run
+python inventory_billing.py          # interactive menu / input
+python inventory_billing.py --demo   # automatic sample run
 ```
 
 ## 8. Test Cases
 
-Test file: `test_student_result_analyzer.py` (run `python test_student_result_analyzer.py` or add `--table` for this table).
+Test file: `test_inventory_billing.py` (run `python test_inventory_billing.py` or add `--table` for this table).
 
 | TC | Scenario / Input | Expected Output | Actual Output | Result |
 |----|------------------|-----------------|---------------|--------|
-| TC01 | Grade at 90% | `O` | `O` | PASS |
-| TC02 | Grade at 89.99% | `A+` | `A+` | PASS |
-| TC03 | Grade at 70% | `A` | `A` | PASS |
-| TC04 | Grade at 40% (lowest pass) | `P` | `P` | PASS |
-| TC05 | Grade at 39.99% | `F` | `F` | PASS |
-| TC06 | All subjects 100 | `(500, 100.0, 'O', 'PASS')` | `(500, 100.0, 'O', 'PASS')` | PASS |
-| TC07 | Marks 80,70,60,50,40 (lowest exactly 40) | `(300, 60.0, 'B', 'PASS')` | `(300, 60.0, 'B', 'PASS')` | PASS |
-| TC08 | One subject 39 -> fails whole result | `(439, 87.8, 'F', 'FAIL')` | `(439, 87.8, 'F', 'FAIL')` | PASS |
-| TC09 | Only 4 marks entered | `Error: Exactly 5 marks are required` | `Error: Exactly 5 marks are required` | PASS |
-| TC10 | A mark of 101 | `Error: Marks must be between 0 and 100` | `Error: Marks must be between 0 and 100` | PASS |
-| TC11 | A negative mark | `Error: Marks must be between 0 and 100` | `Error: Marks must be between 0 and 100` | PASS |
-| TC12 | Ties share rank (90,90,80 totals) -> 1,1,3 | `[('A', 1), ('B', 1), ('C', 3)]` | `[('A', 1), ('B', 1), ('C', 3)]` | PASS |
-| TC13 | Class average of totals 500, 250, 390 | `380.0` | `380.0` | PASS |
-| TC14 | Pass percentage (2 of 3 pass) | `66.67` | `66.67` | PASS |
-| TC15 | Topper of the class | `['A']` | `['A']` | PASS |
-| TC16 | Highest mark in Maths (and who) | `(100, ['A'])` | `(100, ['A'])` | PASS |
+| TC01 | Bill: 10 x Notebook (no discount) | `(600.0, 0.0, 72.0, 672.0)` | `(600.0, 0.0, 72.0, 672.0)` | PASS |
+| TC02 | Bill: 3 x Calculator (5% discount slab) | `(2550.0, 127.5, 436.05, 2858.55)` | `(2550.0, 127.5, 436.05, 2858.55)` | PASS |
+| TC03 | Bill: 4 x Backpack (10% discount slab) | `(6000.0, 600.0, 972.0, 6372.0)` | `(6000.0, 600.0, 972.0, 6372.0)` | PASS |
+| TC04 | Discount rate for Rs.1999.99 | `0.0` | `0.0` | PASS |
+| TC05 | Discount rate for Rs.2000 | `0.05` | `0.05` | PASS |
+| TC06 | Discount rate for Rs.4999.99 | `0.05` | `0.05` | PASS |
+| TC07 | Discount rate for Rs.5000 | `0.1` | `0.1` | PASS |
+| TC08 | Notebook stock after selling 10 | `90` | `90` | PASS |
+| TC09 | Ask for more than the stock (7 Backpacks) | `Error: Insufficient stock for Backpack` | `Error: Insufficient stock for Backpack` | PASS |
+| TC10 | Failed bill must not reduce stock of valid items | `100` | `100` | PASS |
+| TC11 | Unknown product code P9 | `Error: Product not found: P9` | `Error: Product not found: P9` | PASS |
+| TC12 | Quantity 0 | `Error: Quantity must be positive` | `Error: Quantity must be positive` | PASS |
+| TC13 | Empty cart | `Error: Cart is empty` | `Error: Cart is empty` | PASS |
+| TC14 | Low-stock list after selling 3 Backpacks | `['Backpack']` | `['Backpack']` | PASS |
+| TC15 | Restock with negative quantity | `Error: Quantity must be positive` | `Error: Quantity must be positive` | PASS |
+| TC16 | Add product with GST 40% | `Error: Invalid price, stock or GST rate` | `Error: Invalid price, stock or GST rate` | PASS |
 
 **Result: 16/16 test cases passed**
 
 ## 9. Output
 
-Command: `python student_result_analyzer.py --demo`
+Command: `python inventory_billing.py --demo`
 
 ```text
-Rank Name       Total       %  Grade  Result
-1    Anil         458    91.6      O    PASS
-1    Divya        458    91.6      O    PASS
-3    Bhavya       400    80.0     A+    PASS
-4    Esha         305    61.0      B    PASS
-5    Charan       285    57.0      F    FAIL
+BILL 1
+Item           Qty    Price     Amount
+Notebook        10    60.00     600.00
+Pen Pack         2   120.00     240.00
+--------------------------------------
+Subtotal                        840.00
+Discount                         -0.00
+GST                             100.80
+TOTAL                           940.80
 
-Class average      : 381.2
-Standard deviation : 73.77
-Pass percentage    : 80.0 %
-Topper(s)          : Anil, Divya
-Highest in Maths     : 92 (Anil, Divya)
-Highest in Physics   : 88 (Anil, Divya)
-Highest in Chemistry : 95 (Anil, Divya)
-Highest in English   : 85 (Anil, Divya)
-Highest in Python    : 98 (Anil, Divya)
+BILL 2 (qualifies for 10% discount)
+Item           Qty    Price     Amount
+Calculator       3   850.00    2550.00
+Backpack         4  1500.00    6000.00
+--------------------------------------
+Subtotal                       8550.00
+Discount                       -855.00
+GST                            1385.10
+TOTAL                          9080.10
+
+Low stock items: ['Backpack']
+Bill 3 error: Insufficient stock for Backpack
 ```
 
 <!-- Add your own terminal screenshot here:
-![Output screenshot](../screenshots/03_student_result_analyzer.png) -->
+![Output screenshot](../screenshots/04_inventory_billing.png) -->
 
 ## 10. Conclusion
 
-The analyzer turns raw marks into a complete report with correct grading, tie-aware ranking and class statistics. Keeping each calculation in its own function (grade, analyse, class_statistics) made it easy to test every rule separately; all 16 test cases pass, including the grade boundaries (89.99 vs 90) and the rule that one failed subject fails the whole result.
+The billing system produces correct bills with slab discounts and item-wise GST, and it protects the inventory by validating the entire cart before changing any stock. The 16 test cases confirm the discount boundaries (1999.99, 2000, 4999.99, 5000), the all-or-nothing stock update and the low-stock report. The program can be extended with product categories, invoice numbers or printing to a file.

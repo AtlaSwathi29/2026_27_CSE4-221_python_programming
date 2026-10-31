@@ -1,16 +1,22 @@
-Rank Name       Total       %  Grade  Result
-1    Anil         458    91.6      O    PASS
-1    Divya        458    91.6      O    PASS
-3    Bhavya       400    80.0     A+    PASS
-4    Esha         305    61.0      B    PASS
-5    Charan       285    57.0      F    FAIL
+BILL 1
+Item           Qty    Price     Amount
+Notebook        10    60.00     600.00
+Pen Pack         2   120.00     240.00
+--------------------------------------
+Subtotal                        840.00
+Discount                         -0.00
+GST                             100.80
+TOTAL                           940.80
 
-Class average      : 381.2
-Standard deviation : 73.77
-Pass percentage    : 80.0 %
-Topper(s)          : Anil, Divya
-Highest in Maths     : 92 (Anil, Divya)
-Highest in Physics   : 88 (Anil, Divya)
-Highest in Chemistry : 95 (Anil, Divya)
-Highest in English   : 85 (Anil, Divya)
-Highest in Python    : 98 (Anil, Divya)
+BILL 2 (qualifies for 10% discount)
+Item           Qty    Price     Amount
+Calculator       3   850.00    2550.00
+Backpack         4  1500.00    6000.00
+--------------------------------------
+Subtotal                       8550.00
+Discount                       -855.00
+GST                            1385.10
+TOTAL                          9080.10
+
+Low stock items: ['Backpack']
+Bill 3 error: Insufficient stock for Backpack
