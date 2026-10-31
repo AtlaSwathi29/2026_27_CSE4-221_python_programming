@@ -1,171 +1,152 @@
-# Case Study 6: Sudoku Validator and Solver
+# Case Study 7: Tic-Tac-Toe with an Unbeatable Computer Player (Minimax)
 
-> **Files:** [`sudoku.py`](sudoku.py) · [`test_sudoku.py`](test_sudoku.py) · [`output.txt`](output.txt)
+> **Files:** [`tictactoe_ai.py`](tictactoe_ai.py) · [`test_tictactoe_ai.py`](test_tictactoe_ai.py) · [`output.txt`](output.txt)
 
 ## 1. Problem Statement
 
-A Sudoku board is a 9x9 grid in which every row, every column and every 3x3 box must contain each digit 1-9 exactly once. Write a program that (a) checks whether a given board (with empty cells shown as 0) is valid, (b) checks whether it is completely and correctly filled, and (c) solves an unfinished puzzle automatically.
+Develop a two-player Tic-Tac-Toe game in which one player is a human and the other is the computer. The computer must play perfectly: it must take a win when available, block the opponent's winning move and never lose a game. A human can at best draw.
 
 ## 2. Objectives
 
-- Work with two-dimensional lists (rows, columns and sub-grids).
-- Detect duplicates using lists and sets.
-- Understand and implement recursion and backtracking.
-- Validate input shape and values and report errors clearly.
+- Represent a game board with a list and detect win/draw states using a list of winning lines.
+- Understand and implement the Minimax algorithm using recursion.
+- Use scoring with depth so that quicker wins are preferred.
+- Verify correctness by exhaustively testing every possible human move.
 
 ## 3. Assumptions
 
-- The board is a list of 9 lists with 9 integers each; 0 represents an empty cell.
-- A board is valid if no digit repeats in any row, column or 3x3 box (empty cells are ignored).
-- The solver returns the first solution it finds; if none exists it returns False and leaves the board unchanged.
-- A built-in sample puzzle is used for the demo.
+- The board has 9 cells numbered 1-9 (stored as indexes 0-8); X always moves first.
+- The human chooses X or O at the start; the computer plays the other symbol.
+- On an empty board the computer plays the centre cell (it is optimal and avoids a long search).
+- Input is typed in the terminal; invalid or occupied cells are rejected and asked again.
 
 ## 4. Algorithm
 
-1. **Validator:** check the board is 9x9 and every cell is an integer from 0 to 9.
-2. For each index i from 0 to 8 take row i and column i; if either has a repeated non-zero digit -> invalid.
-3. For each of the nine 3x3 boxes collect its 9 cells; a repeated non-zero digit -> invalid. Otherwise valid.
-4. **Complete check:** the board is valid and has no 0 cell.
-5. **Solver (backtracking):** find the first empty cell. If there is none the puzzle is solved.
-6. Try digits 1 to 9 in that cell; a digit is allowed if it is not already in the cell's row, column or box.
-7. Place an allowed digit and solve the rest recursively. If that fails, remove the digit (undo) and try the next one.
-8. If no digit fits, return False so the previous cell can try a different digit. Stop.
+1. Start with an empty 3x3 board and X to move.
+2. While the game is not over: if it is the human's turn read a free cell (1-9) and place the mark.
+3. If it is the computer's turn call `best_move`, which tries every empty cell and evaluates it with `minimax`.
+4. **minimax(board, player, depth):** if the AI has won return 10 - depth; if the human has won return depth - 10; if the board is full return 0.
+5. Otherwise try every empty cell: place the mark, call minimax for the other player with depth + 1, remove the mark.
+6. When it is the AI's turn take the maximum of the scores, otherwise take the minimum.
+7. `best_move` chooses the cell with the highest score. Switch turns and repeat.
+8. When the game ends, show the board and announce the winner or a draw. Stop.
 
 ## 5. Pseudocode
 
 ```text
-FUNCTION solve(board)
-    FOR row FROM 0 TO 8
-        FOR col FROM 0 TO 8
-            IF board[row][col] = 0 THEN
-                FOR digit FROM 1 TO 9
-                    IF can_place(board, row, col, digit) THEN
-                        board[row][col] <- digit
-                        IF solve(board) THEN RETURN True
-                        board[row][col] <- 0          // undo (backtrack)
-                RETURN False                          // no digit fits here
-    RETURN True                                       // no empty cell left
+FUNCTION minimax(board, player, depth)
+    result <- winner(board)
+    IF result = AI THEN RETURN 10 - depth
+    IF result = HUMAN THEN RETURN depth - 10
+    IF result = "Draw" THEN RETURN 0
+    scores <- empty list
+    FOR EACH empty cell
+        board[cell] <- player
+        APPEND minimax(board, other(player), depth + 1) TO scores
+        board[cell] <- empty                      // undo the move
+    IF player = AI THEN RETURN MAX(scores) ELSE RETURN MIN(scores)
 END FUNCTION
 
-FUNCTION is_valid(board)
-    FOR i FROM 0 TO 8
-        IF has_duplicates(row i) OR has_duplicates(column i) THEN RETURN False
-    FOR EACH 3x3 box
-        IF has_duplicates(box) THEN RETURN False
-    RETURN True
+FUNCTION best_move(board, AI)
+    IF board is empty THEN RETURN centre cell
+    best_score <- none
+    FOR EACH empty cell
+        board[cell] <- AI
+        score <- minimax(board, other(AI), 1)
+        board[cell] <- empty
+        IF best_score is none OR score > best_score THEN best_cell <- cell; best_score <- score
+    RETURN best_cell
 END FUNCTION
 ```
 
 ## 6. Flowchart
 
-### 6.1 Validity check
+### 6.1 Game loop
 
 ```mermaid
 flowchart TD
-    A(["Start"]) --> B{"Board is 9x9 with digits 0 to 9?"}
-    B -- No --> ERR[/"Show error message"/]
-    B -- Yes --> C["Check every row and every column"]
-    C --> D{"Any repeated digit 1-9?"}
-    D -- Yes --> INV[/"Board is invalid"/]
-    D -- No --> E["Check every 3x3 box"]
-    E --> F{"Any repeated digit 1-9?"}
-    F -- Yes --> INV
-    F -- No --> VAL[/"Board is valid"/]
-    INV --> Z(["End"])
-    VAL --> Z
-    ERR --> Z
+    A(["Start game"]) --> B["Empty 3x3 board, X moves first"]
+    B --> C{"Game over?"}
+    C -- No --> D{"Human's turn?"}
+    D -- Yes --> E[/"Read cell number 1 to 9"/]
+    E --> F{"Cell is free?"}
+    F -- No --> E
+    F -- Yes --> G["Place human mark"]
+    D -- No --> H["best_move: score every free cell using minimax"]
+    H --> I["Place computer mark on the highest-scoring cell"]
+    G --> J["Switch turn"]
+    I --> J
+    J --> C
+    C -- Yes --> K[/"Show board and winner or draw"/]
+    K --> Z(["End"])
 ```
 
-### 6.2 Backtracking solver
+### 6.2 Minimax
 
 ```mermaid
 flowchart TD
-    A(["Start solve"]) --> B["Find the first empty cell"]
-    B --> C{"Empty cell found?"}
-    C -- No --> OK(["Return True: solved"])
-    C -- Yes --> D["digit = 1"]
-    D --> E{"digit greater than 9?"}
-    E -- Yes --> FAIL(["Return False: go back"])
-    E -- No --> F{"digit allowed in row, column and box?"}
-    F -- No --> G["digit = digit + 1"]
-    G --> E
-    F -- Yes --> H["Place digit in the cell"]
-    H --> I{"Recursive solve returns True?"}
-    I -- Yes --> OK
-    I -- No --> J["Remove the digit - undo"]
-    J --> G
+    A(["minimax(board, player, depth)"]) --> B{"Result of the board?"}
+    B -- "AI has won" --> R1(["Return 10 - depth"])
+    B -- "Human has won" --> R2(["Return depth - 10"])
+    B -- "Board full" --> R3(["Return 0"])
+    B -- "Game continues" --> C["Pick next empty cell"]
+    C --> D["Place player's mark"]
+    D --> E["score = minimax(board, other player, depth + 1)"]
+    E --> F["Remove the mark - undo"]
+    F --> G{"More empty cells?"}
+    G -- Yes --> C
+    G -- No --> H{"Whose turn is it?"}
+    H -- "AI" --> R4(["Return highest score"])
+    H -- "Human" --> R5(["Return lowest score"])
 ```
 
 ## 7. Source Code
 
-The complete, commented program is in [`sudoku.py`](sudoku.py). It uses only the Python standard library (Python 3.8 or later).
+The complete, commented program is in [`tictactoe_ai.py`](tictactoe_ai.py). It uses only the Python standard library (Python 3.8 or later).
 
 ```bash
-python sudoku.py          # interactive menu / input
-python sudoku.py --demo   # automatic sample run
+python tictactoe_ai.py          # interactive menu / input
+python tictactoe_ai.py --demo   # automatic sample run
 ```
 
 ## 8. Test Cases
 
-Test file: `test_sudoku.py` (run `python test_sudoku.py` or add `--table` for this table).
+Test file: `test_tictactoe_ai.py` (run `python test_tictactoe_ai.py` or add `--table` for this table).
 
 | TC | Scenario / Input | Expected Output | Actual Output | Result |
 |----|------------------|-----------------|---------------|--------|
-| TC01 | Sample puzzle (partly filled) is valid | `True` | `True` | PASS |
-| TC02 | Duplicate 7 in a row only (put 7 at row 1, col 9) | `False` | `False` | PASS |
-| TC03 | Duplicate 3 in a column only (put 3 at row 9, col 2) | `False` | `False` | PASS |
-| TC04 | Duplicate 9 in a 3x3 box only (put 9 at row 1, col 3) | `False` | `False` | PASS |
-| TC05 | Legal extra digit (put 4 at row 1, col 3) | `True` | `True` | PASS |
-| TC06 | Board with only 8 rows | `Error: Board must be 9x9` | `Error: Board must be 9x9` | PASS |
-| TC07 | Cell containing 10 | `Error: Cells must be integers from 0 to 9` | `Error: Cells must be integers from 0 to 9` | PASS |
-| TC08 | Unsolved puzzle is not complete | `False` | `False` | PASS |
-| TC09 | Solver returns True for the sample puzzle | `True` | `True` | PASS |
-| TC10 | Solved grid equals the known solution | `['534678912', '672195348', '198342567', '859761423', '426853791', '713924856', '961537284', '287419635', '345286179']` | `['534678912', '672195348', '198342567', '859761423', '426853791', '713924856', '961537284', '287419635', '345286179']` | PASS |
-| TC11 | Solved grid is valid and complete | `True` | `True` | PASS |
-| TC12 | Unsolvable board: (valid?, solved?, board unchanged?) | `(True, False, True)` | `(True, False, True)` | PASS |
-| TC13 | Empty board: (solved?, complete?) | `(True, True)` | `(True, True)` | PASS |
+| TC01 | Winner: top row of X | `X` | `X` | PASS |
+| TC02 | Winner: left column of O | `O` | `O` | PASS |
+| TC03 | Winner: main diagonal of X | `X` | `X` | PASS |
+| TC04 | Winner: anti-diagonal of O | `O` | `O` | PASS |
+| TC05 | Full board, no line -> Draw | `Draw` | `Draw` | PASS |
+| TC06 | Last move completes a line on a full board | `X` | `X` | PASS |
+| TC07 | Game still in progress | `None` | `None` | PASS |
+| TC08 | AI (X) completes its own line: X X . / O O . | `2` | `2` | PASS |
+| TC09 | AI (O) blocks X's line: X X . / . O . | `2` | `2` | PASS |
+| TC10 | AI (O) answers corner opening with the centre | `4` | `4` | PASS |
+| TC11 | AI moves first on empty board -> centre | `4` | `4` | PASS |
+| TC12 | AI as O can never lose (human tries every move) | `True` | `True` | PASS |
+| TC13 | AI as X can never lose (human tries every move) | `True` | `True` | PASS |
 
 **Result: 13/13 test cases passed**
 
 ## 9. Output
 
-Command: `python sudoku.py --demo`
+Command: `python tictactoe_ai.py --demo`
 
 ```text
-Puzzle:
-5 3 . | . 7 . | . . .
-6 . . | 1 9 5 | . . .
-. 9 8 | . . . | . 6 .
-------+-------+------
-8 . . | . 6 . | . . 3
-4 . . | 8 . 3 | . . 1
-7 . . | . 2 . | . . 6
-------+-------+------
-. 6 . | . . . | 2 8 .
-. . . | 4 1 9 | . . 5
-. . . | . 8 . | . 7 9
-
-Puzzle valid? True
-
-Solution:
-5 3 4 | 6 7 8 | 9 1 2
-6 7 2 | 1 9 5 | 3 4 8
-1 9 8 | 3 4 2 | 5 6 7
-------+-------+------
-8 5 9 | 7 6 1 | 4 2 3
-4 2 6 | 8 5 3 | 7 9 1
-7 1 3 | 9 2 4 | 8 5 6
-------+-------+------
-9 6 1 | 5 3 7 | 2 8 4
-2 8 7 | 4 1 9 | 6 3 5
-3 4 5 | 2 8 6 | 1 7 9
-
-Solution valid and complete? True
+ O | X | X
+---+---+---
+ X | X | O
+---+---+---
+ O | O | X
+Result: Draw
 ```
 
 <!-- Add your own terminal screenshot here:
-![Output screenshot](../screenshots/06_sudoku_validator_solver.png) -->
+![Output screenshot](../screenshots/07_tictactoe_minimax_ai.png) -->
 
 ## 10. Conclusion
 
-The program validates and solves Sudoku puzzles using nested lists and recursive backtracking. The solver finds the unique solution of the sample puzzle, correctly reports an unsolvable board without damaging it, and the validator pinpoints row-only, column-only and box-only mistakes (13 of 13 test cases pass). Backtracking is a general technique that also applies to problems such as N-Queens and maze solving.
+The computer player uses Minimax to look ahead through every possible continuation of the game, so it always wins when it can, blocks when it must and never loses. This was proved by the exhaustive test that plays every possible human move against the AI both as X and as O (13 of 13 test cases pass). The assignment shows how recursion and a simple scoring rule can create game-playing intelligence.
