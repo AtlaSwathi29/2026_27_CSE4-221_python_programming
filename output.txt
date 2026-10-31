@@ -1,13 +1,7 @@
-Accounts opened: 1001 1002
-Deposit 2000 to Asha -> balance 7000
-Withdraw 1500 from Asha -> balance 5500
-Transfer 3000 Asha->Ravi -> Asha balance 2500
-Withdraw 5000 from Ravi (breaks minimum balance) -> Insufficient funds (minimum balance rule)
-Withdraw with wrong PIN -> Wrong PIN
-Wrong PIN again -> Wrong PIN
-Wrong PIN third time -> Account locked after 3 wrong PINs
-Correct PIN after lock -> Account is locked
-
-Mini statement for Ravi:
-  OPEN             1000.00   balance:    1000.00
-  TRANSFER IN      3000.00   balance:    4000.00
+Search 'python': ['B1', 'B2', 'B4']
+Due date for B1 (M1): 2026-10-15
+M1 borrows 4th book -> Borrowing limit reached
+M2 borrows B2 (no copy left) -> No copy available
+Overdue report on 25 Oct: [('Meena', 'Python Crash Course', 10, 20), ('Meena', 'Learning Python', 10, 20), ('Meena', 'Automate the Boring Stuff', 10, 20)]
+Fine returning B1 on 10 Oct : 0
+Fine returning B2 on 20 Oct : 10
