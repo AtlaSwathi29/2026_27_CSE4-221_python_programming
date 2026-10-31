@@ -1,181 +1,169 @@
-# Case Study 8: Matrix Operations Toolkit
+# Case Study 9: Infix Expression Evaluator using Stacks
 
-> **Files:** [`matrix_toolkit.py`](matrix_toolkit.py) · [`test_matrix_toolkit.py`](test_matrix_toolkit.py) · [`output.txt`](output.txt)
+> **Files:** [`expression_evaluator.py`](expression_evaluator.py) · [`test_expression_evaluator.py`](test_expression_evaluator.py) · [`output.txt`](output.txt)
 
 ## 1. Problem Statement
 
-Develop a toolkit that performs common matrix operations without using external libraries: addition, subtraction, multiplication, transpose, trace, symmetry check, determinant of any square matrix and the inverse of an invertible matrix. The toolkit must reject invalid inputs (empty, ragged, wrongly sized, non-square or singular matrices) with clear messages.
+Write a program that evaluates arithmetic expressions typed by the user, such as `3 + 4 * (2 - 1) ^ 2`, without using Python's `eval()`. It must follow the correct operator precedence and associativity, support brackets, decimal numbers, unary minus and the power operator, and report errors such as mismatched brackets, division by zero and invalid input.
 
 ## 2. Objectives
 
-- Represent matrices as lists of lists and use nested loops and list comprehensions.
-- Implement matrix multiplication with three nested loops.
-- Implement the determinant recursively using cofactor expansion.
-- Compute the inverse using cofactors, the adjugate and the determinant.
-- Validate dimensions and raise meaningful `ValueError` messages.
+- Understand the stack data structure (LIFO) and implement it with Python lists.
+- Implement the Shunting-yard algorithm to convert infix expressions to postfix.
+- Evaluate a postfix expression with a stack.
+- Handle operator precedence, left/right associativity and unary operators.
+- Practise robust error handling for malformed input.
 
 ## 3. Assumptions
 
-- A matrix is a non-empty list of rows of equal length containing numbers.
-- Determinant and inverse are defined only for square matrices; a matrix with determinant 0 is singular and has no inverse.
-- Inverse values are rounded to 4 decimal places.
-- Matrices are small; recursive cofactor expansion is efficient enough.
+- Supported operators: `+  -  *  /  ^` (power) and brackets `( )`.
+- Precedence from low to high: `+ -`, then `* /`, then unary minus, then `^`. Power is right-associative (2^3^2 = 512).
+- Unary minus is allowed at the start, after `(`, or after another operator; `-2^2` equals -4.
+- Numbers may have a decimal point; results that are whole numbers are shown without `.0`.
+- Variables and functions (sin, log, ...) are not supported.
 
 ## 4. Algorithm
 
-1. **Validate:** matrix is not empty and every row has the same length.
-2. **Add / subtract:** sizes must be equal; combine corresponding elements.
-3. **Multiply:** columns of A must equal rows of B; result[i][j] = sum over k of A[i][k] x B[k][j].
-4. **Transpose:** element [i][j] of the result is element [j][i] of the original.
-5. **Determinant:** size 1 -> the element; size 2 -> ad - bc; otherwise expand along the first row: sum of sign x element x determinant of its minor.
-6. **Inverse:** matrix must be square and det != 0. Build the cofactor matrix, transpose it (adjugate) and divide every element by det.
-7. **Trace / symmetry:** sum of the diagonal; a matrix is symmetric if it equals its transpose.
-8. Show the result or the error message. Stop.
+1. **Tokenize:** scan the text; read whole numbers (including decimals); treat `+ - * / ^ ( )` as tokens; a `-` at the start or after an operator or `(` becomes a unary-minus token; reject any other character.
+2. **Convert to postfix (Shunting-yard):** keep an output list and an operator stack.
+3. Number -> output. `(` -> push. `)` -> pop operators to the output until `(` is found (error if none).
+4. Unary minus -> push. Binary operator -> while the stack top has higher precedence (or equal precedence and the operator is left-associative) pop it to the output; then push the operator.
+5. At the end pop all remaining operators to the output (error if a `(` remains).
+6. **Evaluate postfix:** scan the output; push numbers; for an operator pop the needed operands, compute, push the result (error on division by zero, missing operands or a non-real result).
+7. At the end exactly one value must remain on the stack - that is the answer; otherwise the expression is invalid. Stop.
 
 ## 5. Pseudocode
 
 ```text
-FUNCTION determinant(M)
-    n <- size of M  (error if not square)
-    IF n = 1 THEN RETURN M[0][0]
-    IF n = 2 THEN RETURN M[0][0]*M[1][1] - M[0][1]*M[1][0]
-    total <- 0
-    FOR col FROM 0 TO n - 1
-        sign <- +1 IF col is even ELSE -1
-        total <- total + sign * M[0][col] * determinant(minor(M, 0, col))
-    RETURN total
-END FUNCTION
-
-FUNCTION inverse(M)
-    det <- determinant(M)
-    IF det = 0 THEN error "Matrix is singular"
-    FOR i, j: cofactor[i][j] <- (-1)^(i+j) * determinant(minor(M, i, j))
-    adjugate <- transpose(cofactor)
-    RETURN adjugate / det   (each element divided, rounded to 4 places)
+FUNCTION to_postfix(tokens)
+    output <- empty list;  stack <- empty stack
+    FOR EACH token IN tokens
+        IF token is a number THEN APPEND token TO output
+        ELSE IF token = "(" THEN PUSH token
+        ELSE IF token = ")" THEN
+            WHILE stack not empty AND top != "(": APPEND POP() TO output
+            IF stack is empty THEN error "Mismatched parentheses"
+            POP "("
+        ELSE IF token = unary minus THEN PUSH token
+        ELSE                                       // binary operator
+            WHILE stack not empty AND top != "(" AND
+                  (prec(top) > prec(token) OR (prec(top) = prec(token) AND token is left-associative))
+                APPEND POP() TO output
+            PUSH token
+    WHILE stack not empty
+        IF top = "(" THEN error "Mismatched parentheses"
+        APPEND POP() TO output
+    RETURN output
 END FUNCTION
 ```
 
 ## 6. Flowchart
 
-### 6.1 Determinant (recursive)
+### 6.1 Overall process
 
 ```mermaid
 flowchart TD
-    A(["determinant(M)"]) --> B{"Size 1?"}
-    B -- Yes --> R1(["Return the only element"])
-    B -- No --> C{"Size 2?"}
-    C -- Yes --> R2(["Return a*d - b*c"])
-    C -- No --> D["total = 0, column = 0"]
-    D --> E["total = total + sign x M[0][column] x determinant of minor"]
-    E --> F["column = column + 1"]
-    F --> G{"column less than n?"}
-    G -- Yes --> E
-    G -- No --> R3(["Return total"])
-```
-
-### 6.2 Inverse
-
-```mermaid
-flowchart TD
-    A(["Start: inverse(M)"]) --> B{"M is square?"}
-    B -- No --> ERR[/"Error: matrix must be square"/]
-    B -- Yes --> C["det = determinant(M)"]
-    C --> D{"det equals 0?"}
-    D -- Yes --> ERR2[/"Error: matrix is singular"/]
-    D -- No --> E["Cofactor matrix: sign x determinant of each minor"]
-    E --> F["Adjugate = transpose of the cofactor matrix"]
-    F --> G["Inverse = adjugate / det"]
-    G --> H[/"Show inverse"/]
+    A(["Start"]) --> B[/"Read expression"/]
+    B --> C{"Expression empty?"}
+    C -- Yes --> ERR[/"Show error message"/]
+    C -- No --> D["Tokenize: numbers, operators, brackets, unary minus"]
+    D --> E["Shunting-yard: infix to postfix using an operator stack"]
+    E --> F["Evaluate postfix using a number stack"]
+    F --> G{"Exactly one value left?"}
+    G -- No --> ERR
+    G -- Yes --> H[/"Print result"/]
     H --> Z(["End"])
     ERR --> Z
-    ERR2 --> Z
+```
+
+### 6.2 Shunting-yard conversion
+
+```mermaid
+flowchart TD
+    A(["Take next token"]) --> B{"Token type?"}
+    B -- "Number" --> C["Append to output"]
+    B -- "Open bracket or unary minus" --> D["Push on stack"]
+    B -- "Close bracket" --> E["Pop operators to output until open bracket"]
+    E --> F{"Open bracket found?"}
+    F -- No --> ERR[/"Mismatched parentheses"/]
+    F -- Yes --> G["Discard the open bracket"]
+    B -- "Binary operator" --> H["Pop to output while top has higher precedence, or equal and left-associative"]
+    H --> I["Push the operator"]
+    C --> J{"More tokens?"}
+    D --> J
+    G --> J
+    I --> J
+    J -- Yes --> A
+    J -- No --> K["Pop all remaining operators to output"]
+    K --> L(["Postfix ready"])
 ```
 
 ## 7. Source Code
 
-The complete, commented program is in [`matrix_toolkit.py`](matrix_toolkit.py). It uses only the Python standard library (Python 3.8 or later).
+The complete, commented program is in [`expression_evaluator.py`](expression_evaluator.py). It uses only the Python standard library (Python 3.8 or later).
 
 ```bash
-python matrix_toolkit.py          # interactive menu / input
-python matrix_toolkit.py --demo   # automatic sample run
+python expression_evaluator.py          # interactive menu / input
+python expression_evaluator.py --demo   # automatic sample run
 ```
 
 ## 8. Test Cases
 
-Test file: `test_matrix_toolkit.py` (run `python test_matrix_toolkit.py` or add `--table` for this table).
+Test file: `test_expression_evaluator.py` (run `python test_expression_evaluator.py` or add `--table` for this table).
 
 | TC | Scenario / Input | Expected Output | Actual Output | Result |
 |----|------------------|-----------------|---------------|--------|
-| TC01 | A + B  (A=[[1,2],[3,4]], B=[[5,6],[7,8]]) | `[[6, 8], [10, 12]]` | `[[6, 8], [10, 12]]` | PASS |
-| TC02 | A - B | `[[-4, -4], [-4, -4]]` | `[[-4, -4], [-4, -4]]` | PASS |
-| TC03 | A x B | `[[19, 22], [43, 50]]` | `[[19, 22], [43, 50]]` | PASS |
-| TC04 | Transpose of 2x3 [[1,2,3],[4,5,6]] | `[[1, 4], [2, 5], [3, 6]]` | `[[1, 4], [2, 5], [3, 6]]` | PASS |
-| TC05 | Add 2x2 and 2x3 | `Error: Matrices must have the same size to add` | `Error: Matrices must have the same size to add` | PASS |
-| TC06 | Multiply 2x2 by 3x2 (sizes do not match) | `Error: Columns of A must equal rows of B` | `Error: Columns of A must equal rows of B` | PASS |
-| TC07 | Multiply 2x3 by 3x1 -> 2x1 | `[[14], [32]]` | `[[14], [32]]` | PASS |
-| TC08 | Determinant of [[4,7],[2,6]] | `10` | `10` | PASS |
-| TC09 | Determinant of 3x3 C | `1` | `1` | PASS |
-| TC10 | Determinant of singular 3x3 | `0` | `0` | PASS |
-| TC11 | Determinant of 4x4 matrix | `30` | `30` | PASS |
-| TC12 | Determinant of a non-square matrix | `Error: Matrix must be square` | `Error: Matrix must be square` | PASS |
-| TC13 | Inverse of [[4,7],[2,6]] | `[[0.6, -0.7], [-0.2, 0.4]]` | `[[0.6, -0.7], [-0.2, 0.4]]` | PASS |
-| TC14 | Inverse of 3x3 C | `[[-24, 18, 5], [20, -15, -4], [-5, 4, 1]]` | `[[-24.0, 18.0, 5.0], [20.0, -15.0, -4.0], [-5.0, 4.0, 1.0]]` | PASS |
-| TC15 | C x inverse(C) = identity | `[[1, 0, 0], [0, 1, 0], [0, 0, 1]]` | `[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]` | PASS |
-| TC16 | Inverse of a singular matrix | `Error: Matrix is singular (determinant is 0)` | `Error: Matrix is singular (determinant is 0)` | PASS |
-| TC17 | Inverse of 1x1 [[2]] | `[[0.5]]` | `[[0.5]]` | PASS |
-| TC18 | Trace of A | `5` | `5` | PASS |
-| TC19 | [[1,2],[2,1]] is symmetric | `True` | `True` | PASS |
-| TC20 | A is symmetric | `False` | `False` | PASS |
-| TC21 | Rows of different length | `Error: All rows must have the same length` | `Error: All rows must have the same length` | PASS |
-| TC22 | Empty matrix | `Error: Matrix cannot be empty` | `Error: Matrix cannot be empty` | PASS |
+| TC01 | 2 + 3 * 4  (multiplication first) | `14` | `14` | PASS |
+| TC02 | (2 + 3) * 4  (brackets first) | `20` | `20` | PASS |
+| TC03 | 10 / 4  (decimal result) | `2.5` | `2.5` | PASS |
+| TC04 | 100 - 10 - 5  (left to right) | `85` | `85` | PASS |
+| TC05 | 100 / 10 / 5  (left to right) | `2` | `2` | PASS |
+| TC06 | 2 ^ 3 ^ 2  (power is right-to-left) | `512` | `512` | PASS |
+| TC07 | -2 ^ 2  (unary minus after power) | `-4` | `-4` | PASS |
+| TC08 | 2 * -3  (unary minus after operator) | `-6` | `-6` | PASS |
+| TC09 | 5 - -3 | `8` | `8` | PASS |
+| TC10 | -(2 + 3) | `-5` | `-5` | PASS |
+| TC11 | +5 + 3  (unary plus) | `8` | `8` | PASS |
+| TC12 | 1.5 + 2.5  (decimals) | `4` | `4` | PASS |
+| TC13 | 2 ^ -2 | `0.25` | `0.25` | PASS |
+| TC14 | ((1+2)*(3+4))/7  (nested brackets, no spaces) | `3` | `3` | PASS |
+| TC15 | 3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3  (classic example) | `3.000122` | `3.000122` | PASS |
+| TC16 | Postfix of 2 + 3 * 4 | `2 3 4 * +` | `2 3 4 * +` | PASS |
+| TC17 | Postfix of (2 + 3) * 4 | `2 3 + 4 *` | `2 3 + 4 *` | PASS |
+| TC18 | Missing closing bracket: (2 + 3 | `Error: Mismatched parentheses` | `Error: Mismatched parentheses` | PASS |
+| TC19 | Extra closing bracket: 2 + 3) | `Error: Mismatched parentheses` | `Error: Mismatched parentheses` | PASS |
+| TC20 | Division by zero: 5 / 0 | `Error: Division by zero` | `Error: Division by zero` | PASS |
+| TC21 | Operator without operand: 2 + | `Error: Invalid expression` | `Error: Invalid expression` | PASS |
+| TC22 | Two numbers, no operator: 2 3 | `Error: Invalid expression` | `Error: Invalid expression` | PASS |
+| TC23 | Empty brackets: () | `Error: Invalid expression` | `Error: Invalid expression` | PASS |
+| TC24 | Invalid character: 7 & 2 | `Error: Invalid character: &` | `Error: Invalid character: &` | PASS |
+| TC25 | Bad number: 1.2.3 + 1 | `Error: Invalid number: 1.2.3` | `Error: Invalid number: 1.2.3` | PASS |
+| TC26 | Square root of negative: (-8) ^ 0.5 | `Error: Result is not a real number` | `Error: Result is not a real number` | PASS |
+| TC27 | Empty expression | `Error: Expression is empty` | `Error: Expression is empty` | PASS |
 
-**Result: 22/22 test cases passed**
+**Result: 27/27 test cases passed**
 
 ## 9. Output
 
-Command: `python matrix_toolkit.py --demo`
+Command: `python expression_evaluator.py --demo`
 
 ```text
-A =
-   [1, 2]
-   [3, 4]
-B =
-   [5, 6]
-   [7, 8]
-A + B =
-   [6, 8]
-   [10, 12]
-A - B =
-   [-4, -4]
-   [-4, -4]
-A x B =
-   [19, 22]
-   [43, 50]
-Transpose of A =
-   [1, 3]
-   [2, 4]
-Trace of A = 5 | Symmetric? False
-
-C =
-   [1, 2, 3]
-   [0, 1, 4]
-   [5, 6, 0]
-Determinant of C = 1
-Inverse of C =
-   [-24.0, 18.0, 5.0]
-   [20.0, -15.0, -4.0]
-   [-5.0, 4.0, 1.0]
-C x inverse(C) =
-   [1.0, 0.0, 0.0]
-   [0.0, 1.0, 0.0]
-   [0.0, 0.0, 1.0]
-
-Inverse of [[1,2],[2,4]] -> Matrix is singular (determinant is 0)
+2 + 3 * 4                        = 14
+(2 + 3) * 4                      = 20
+10 / 4                           = 2.5
+2 ^ 3 ^ 2                        = 512
+-2 ^ 2                           = -4
+2 * -3                           = -6
+3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3    = 3.000122
+(2 + 3                           -> Error: Mismatched parentheses
+5 / 0                            -> Error: Division by zero
+2 +                              -> Error: Invalid expression
+7 & 2                            -> Error: Invalid character: &
 ```
 
 <!-- Add your own terminal screenshot here:
-![Output screenshot](../screenshots/08_matrix_toolkit.png) -->
+![Output screenshot](../screenshots/09_expression_evaluator.png) -->
 
 ## 10. Conclusion
 
-The toolkit implements all the required matrix operations from first principles. The determinant uses recursion and the inverse is verified by checking that M x inverse(M) gives the identity matrix. All 22 test cases pass, including a 4x4 determinant, singular matrices and every validation error. The exercise builds a strong understanding of nested loops, recursion and defensive programming.
+The evaluator correctly handles precedence, associativity, brackets, unary minus and decimal numbers using two stacks and the Shunting-yard algorithm, with no use of `eval()`. The 27 test cases (including `2^3^2 = 512`, `-2^2 = -4` and the classic textbook example) pass, and every malformed input is reported with a clear message. The same idea is used inside compilers, calculators and spreadsheet engines.
