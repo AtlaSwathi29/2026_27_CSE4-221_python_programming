@@ -1,0 +1,135 @@
+# Python-Activity-Based-Learning
+
+**Python Programming – Activity-Based Learning (ABL) Assignment** · I B.Tech. · School of Computing and Intelligent Systems
+
+| Field | Details |
+|-------|---------|
+| **Name** | [Atla Swathi] |
+| **Roll Number** | [2600221] |
+| **Branch** | [CSE] |
+| **Section** | [4] |
+
+## Selected Case Studies
+
+1. Banking System
+2. Library Management System
+3. Student Result Analyzer
+4. Inventory and Billing System
+5. Text Analyzer
+6. Sudoku Validator and Solver
+7. Tic-Tac-Toe with an Unbeatable Computer Player (Minimax)
+8. Matrix Operations Toolkit
+9. Infix Expression Evaluator using Stacks
+10. Railway Ticket Reservation System
+
+## Programs, Documentation and Tests
+
+| # | Case study (documentation) | Program | Test cases |
+|---|----------------------------|---------|-----------|
+| 1 | [Banking System](01_banking_system/README.md) | [`banking_system.py`](01_banking_system/banking_system.py) | 16 |
+| 2 | [Library Management System](02_library_management/README.md) | [`library_management.py`](02_library_management/library_management.py) | 17 |
+| 3 | [Student Result Analyzer](03_student_result_analyzer/README.md) | [`student_result_analyzer.py`](03_student_result_analyzer/student_result_analyzer.py) | 16 |
+| 4 | [Inventory and Billing System](04_inventory_billing/README.md) | [`inventory_billing.py`](04_inventory_billing/inventory_billing.py) | 16 |
+| 5 | [Text Analyzer](05_text_analyzer/README.md) | [`text_analyzer.py`](05_text_analyzer/text_analyzer.py) | 17 |
+| 6 | [Sudoku Validator and Solver](06_sudoku_validator_solver/README.md) | [`sudoku.py`](06_sudoku_validator_solver/sudoku.py) | 13 |
+| 7 | [Tic-Tac-Toe with an Unbeatable Computer Player (Minimax)](07_tictactoe_minimax_ai/README.md) | [`tictactoe_ai.py`](07_tictactoe_minimax_ai/tictactoe_ai.py) | 13 |
+| 8 | [Matrix Operations Toolkit](08_matrix_toolkit/README.md) | [`matrix_toolkit.py`](08_matrix_toolkit/matrix_toolkit.py) | 22 |
+| 9 | [Infix Expression Evaluator using Stacks](09_expression_evaluator/README.md) | [`expression_evaluator.py`](09_expression_evaluator/expression_evaluator.py) | 27 |
+| 10 | [Railway Ticket Reservation System](10_railway_reservation/README.md) | [`railway_reservation.py`](10_railway_reservation/railway_reservation.py) | 20 |
+
+All 177 test cases pass. Every case-study folder contains the program, a test file, the sample
+output and a `README.md` with the problem statement, objectives, assumptions, algorithm, pseudocode,
+flowchart, test-case table and conclusion.
+
+The **consolidated PDF report** (all 10 case studies with code, flowcharts, test tables and outputs) is in
+[`report/Python-ABL-Consolidated-Report.pdf`](report/Python-ABL-Consolidated-Report.pdf).
+
+## Repository Structure
+
+```text
+Python-Activity-Based-Learning/
+├── README.md
+├── report/
+│   └── Python-ABL-Consolidated-Report.pdf
+├── screenshots/
+│   └── README.md
+├── 01_banking_system/
+│   ├── banking_system.py
+│   ├── test_banking_system.py
+│   ├── README.md   (problem, algorithm, flowchart, tests, conclusion)
+│   ├── output.txt
+│   └── flowchart_*.png
+├── 02_library_management/
+│   ├── library_management.py
+│   ├── test_library_management.py
+│   ├── README.md   (problem, algorithm, flowchart, tests, conclusion)
+│   ├── output.txt
+│   └── flowchart_*.png
+├── 03_student_result_analyzer/
+│   ├── student_result_analyzer.py
+│   ├── test_student_result_analyzer.py
+│   ├── README.md   (problem, algorithm, flowchart, tests, conclusion)
+│   ├── output.txt
+│   └── flowchart_*.png
+├── 04_inventory_billing/
+│   ├── inventory_billing.py
+│   ├── test_inventory_billing.py
+│   ├── README.md   (problem, algorithm, flowchart, tests, conclusion)
+│   ├── output.txt
+│   └── flowchart_*.png
+├── 05_text_analyzer/
+│   ├── text_analyzer.py
+│   ├── test_text_analyzer.py
+│   ├── README.md   (problem, algorithm, flowchart, tests, conclusion)
+│   ├── output.txt
+│   └── flowchart_*.png
+├── 06_sudoku_validator_solver/
+│   ├── sudoku.py
+│   ├── test_sudoku.py
+│   ├── README.md   (problem, algorithm, flowchart, tests, conclusion)
+│   ├── output.txt
+│   └── flowchart_*.png
+├── 07_tictactoe_minimax_ai/
+│   ├── tictactoe_ai.py
+│   ├── test_tictactoe_ai.py
+│   ├── README.md   (problem, algorithm, flowchart, tests, conclusion)
+│   ├── output.txt
+│   └── flowchart_*.png
+├── 08_matrix_toolkit/
+│   ├── matrix_toolkit.py
+│   ├── test_matrix_toolkit.py
+│   ├── README.md   (problem, algorithm, flowchart, tests, conclusion)
+│   ├── output.txt
+│   └── flowchart_*.png
+├── 09_expression_evaluator/
+│   ├── expression_evaluator.py
+│   ├── test_expression_evaluator.py
+│   ├── README.md   (problem, algorithm, flowchart, tests, conclusion)
+│   ├── output.txt
+│   └── flowchart_*.png
+└── 10_railway_reservation/
+    ├── railway_reservation.py
+    ├── test_railway_reservation.py
+    ├── README.md   (problem, algorithm, flowchart, tests, conclusion)
+    ├── output.txt
+    └── flowchart_*.png
+```
+
+## How to Run
+
+Requires Python 3.8 or later. No external libraries are needed.
+
+```bash
+cd 01_banking_system
+python banking_system.py          # interactive program
+python banking_system.py --demo   # automatic sample run (used for the output section)
+python test_banking_system.py     # run all test cases of this program
+```
+
+The same pattern works for every folder (use the file names shown in the table above).
+(The Sudoku program has no menu; running it simply solves the sample puzzle.)
+
+
+## Author
+
+Individual assignment – prepared by the student Atla Swathi
