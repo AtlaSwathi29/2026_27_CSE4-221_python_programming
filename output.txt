@@ -1,0 +1,13 @@
+Accounts opened: 1001 1002
+Deposit 2000 to Asha -> balance 7000
+Withdraw 1500 from Asha -> balance 5500
+Transfer 3000 Asha->Ravi -> Asha balance 2500
+Withdraw 5000 from Ravi (breaks minimum balance) -> Insufficient funds (minimum balance rule)
+Withdraw with wrong PIN -> Wrong PIN
+Wrong PIN again -> Wrong PIN
+Wrong PIN third time -> Account locked after 3 wrong PINs
+Correct PIN after lock -> Account is locked
+
+Mini statement for Ravi:
+  OPEN             1000.00   balance:    1000.00
+  TRANSFER IN      3000.00   balance:    4000.00
