@@ -1,154 +1,141 @@
-# Case Study 2: Library Management System
+# Case Study 3: Student Result Analyzer
 
-> **Files:** [`library_management.py`](library_management.py) · [`test_library_management.py`](test_library_management.py) · [`output.txt`](output.txt)
+> **Files:** [`student_result_analyzer.py`](student_result_analyzer.py) · [`test_student_result_analyzer.py`](test_student_result_analyzer.py) · [`output.txt`](output.txt)
 
 ## 1. Problem Statement
 
-A college library needs a program to manage its books and members. Members may borrow at most 3 books for 14 days. A fine of Rs. 2 per day is charged for late returns. The librarian must be able to add books, register members, issue and return books, search the catalogue by title or author, and see an overdue report.
+A department needs a program that takes the marks of every student in five subjects and prepares a result sheet: total, percentage, grade, pass/fail status and rank. It must also report class statistics such as the average, standard deviation, pass percentage, the class topper(s) and the highest scorer in each subject.
 
 ## 2. Objectives
 
-- Use nested dictionaries to store books and members together with their relationships.
-- Work with the `datetime` module (`date`, `timedelta`) to compute due dates and late days.
-- Enforce business rules: borrowing limit, copy availability, duplicate issue, fine calculation.
-- Implement case-insensitive searching and a report generated from stored data.
+- Process lists and dictionaries of student data with loops and built-in functions (`sum`, `min`, `max`, `sorted`).
+- Implement a grading scale using conditional statements.
+- Rank students with ties handled correctly (1, 1, 3 style ranking).
+- Compute basic statistics (mean, standard deviation, pass percentage) without external libraries.
+- Validate input (number of marks and range 0-100).
 
 ## 3. Assumptions
 
-- Each book has a unique id and one or more identical copies.
-- Loan period is 14 days; the fine is Rs. 2 for every day after the due date; no maximum fine.
-- A member may hold at most 3 books and cannot hold two copies of the same book.
-- Dates are supplied by the caller (the interactive menu uses today's date).
-- Data is stored in memory only.
+- Five subjects (Maths, Physics, Chemistry, English, Python), each out of 100.
+- A student passes only if every subject mark is at least 40; otherwise the result is FAIL and the grade is F.
+- Grade scale on percentage: O >= 90, A+ >= 80, A >= 70, B >= 60, C >= 50, P >= 40, otherwise F.
+- Rank is based on total marks among all students; equal totals share the same rank and the next rank is skipped.
+- Standard deviation is the population standard deviation of the totals.
 
 ## 4. Algorithm
 
-1. Start. Create empty dictionaries for books and members.
-2. **Add book:** if the id exists, increase its copies and available count; otherwise create a new entry.
-3. **Register member:** reject duplicate ids and blank names.
-4. **Issue:** check member and book exist -> member does not already hold the book -> member holds fewer than 3 books -> a copy is available. Save the issue date, reduce `available`, return due date = issue date + 14 days.
-5. **Return:** check the book is with the member and return date is not before issue date. days_late = max(0, return date - due date). Fine = days_late x 2. Increase `available`.
-6. **Search:** return sorted ids of books whose title or author contains the keyword (ignoring case).
-7. **Overdue report:** for every issued book with today > due date, list member, title, days late and fine.
-8. Repeat the menu until Exit. Stop.
+1. Start. Read the students' names and marks (or use the demo data).
+2. For each student validate that there are exactly 5 marks and each is between 0 and 100.
+3. total = sum of marks; percentage = total / 5 (rounded to 2 decimals).
+4. If the lowest mark >= 40 then result = PASS and grade comes from the percentage; otherwise result = FAIL and grade = F.
+5. Sort students by total (highest first, then by name).
+6. Assign ranks: a student with the same total as the previous one gets the same rank, otherwise rank = position.
+7. Compute class average, standard deviation = sqrt(mean of squared differences), pass percentage, topper list and the best mark in each subject.
+8. Print the result table and statistics. Stop.
 
 ## 5. Pseudocode
 
 ```text
-FUNCTION issue_book(member_id, book_id, issue_date)
-    IF member_id not in members THEN error "Member not found"
-    IF book_id not in books THEN error "Book not found"
-    IF book_id in member.issued THEN error "Member already has this book"
-    IF length(member.issued) >= 3 THEN error "Borrowing limit reached"
-    IF book.available = 0 THEN error "No copy available"
-    member.issued[book_id] <- issue_date
-    book.available <- book.available - 1
-    RETURN issue_date + 14 days
-END FUNCTION
-
-FUNCTION return_book(member_id, book_id, return_date)
-    check member exists and book_id in member.issued
-    IF return_date < issue_date THEN error
-    days_late <- MAX(0, (return_date - (issue_date + 14 days)).days)
-    remove book_id from member.issued; book.available <- book.available + 1
-    RETURN days_late * 2
+FUNCTION analyse(students)
+    records <- empty list
+    FOR EACH (name, marks) IN students
+        validate marks (5 values, each 0..100)
+        total <- SUM(marks)
+        percentage <- ROUND(total / 5, 2)
+        IF MIN(marks) >= 40 THEN result <- "PASS"; grade <- grade_of(percentage)
+        ELSE result <- "FAIL"; grade <- "F"
+        add record to records
+    SORT records by total (descending), then name
+    FOR i FROM 0 TO length(records) - 1
+        IF i > 0 AND records[i].total = records[i-1].total THEN
+            records[i].rank <- records[i-1].rank
+        ELSE records[i].rank <- i + 1
+    RETURN records
 END FUNCTION
 ```
 
 ## 6. Flowchart
 
-### 6.1 Issue a book
+### 6.1 Result analysis
 
 ```mermaid
 flowchart TD
-    A(["Start"]) --> B[/"Enter member id, book id, issue date"/]
-    B --> C{"Member and book exist?"}
+    A(["Start"]) --> B[/"Read name and 5 marks of every student"/]
+    B --> C{"Exactly 5 marks, each between 0 and 100?"}
     C -- No --> ERR[/"Show error message"/]
-    C -- Yes --> D{"Member already has this book?"}
-    D -- Yes --> ERR
-    D -- No --> E{"Member already holds 3 books?"}
-    E -- Yes --> ERR
-    E -- No --> F{"A copy is available?"}
-    F -- No --> ERR
-    F -- Yes --> G["Save issue date, reduce available copies"]
-    G --> H["Due date = issue date + 14 days"]
-    H --> I[/"Show due date"/]
-    I --> Z(["End"])
-    ERR --> Z
-```
-
-### 6.2 Return a book and calculate the fine
-
-```mermaid
-flowchart TD
-    A(["Start"]) --> B[/"Enter member id, book id, return date"/]
-    B --> C{"Book issued to this member?"}
-    C -- No --> ERR[/"Show error message"/]
-    C -- Yes --> D{"Return date before issue date?"}
-    D -- Yes --> ERR
-    D -- No --> E["days late = return date - due date"]
-    E --> F{"days late greater than 0?"}
-    F -- Yes --> G["fine = days late x 2"]
-    F -- No --> H["fine = 0"]
-    G --> I["Remove book from member, increase available copies"]
-    H --> I
-    I --> J[/"Show fine"/]
-    J --> Z(["End"])
+    C -- Yes --> D["total = sum of marks, percentage = total / 5"]
+    D --> E{"Lowest mark at least 40?"}
+    E -- Yes --> F["result = PASS, grade from percentage"]
+    E -- No --> G["result = FAIL, grade = F"]
+    F --> H["Sort students by total, highest first"]
+    G --> H
+    H --> I["Give ranks - equal totals share a rank"]
+    I --> J["Compute average, standard deviation, pass percentage, toppers"]
+    J --> K[/"Print result table and statistics"/]
+    K --> Z(["End"])
     ERR --> Z
 ```
 
 ## 7. Source Code
 
-The complete, commented program is in [`library_management.py`](library_management.py). It uses only the Python standard library (Python 3.8 or later).
+The complete, commented program is in [`student_result_analyzer.py`](student_result_analyzer.py). It uses only the Python standard library (Python 3.8 or later).
 
 ```bash
-python library_management.py          # interactive menu / input
-python library_management.py --demo   # automatic sample run
+python student_result_analyzer.py          # interactive menu / input
+python student_result_analyzer.py --demo   # automatic sample run
 ```
 
 ## 8. Test Cases
 
-Test file: `test_library_management.py` (run `python test_library_management.py` or add `--table` for this table).
+Test file: `test_student_result_analyzer.py` (run `python test_student_result_analyzer.py` or add `--table` for this table).
 
 | TC | Scenario / Input | Expected Output | Actual Output | Result |
 |----|------------------|-----------------|---------------|--------|
-| TC01 | Issue B1 to M1 on 2026-10-01 (due date) | `2026-10-15` | `2026-10-15` | PASS |
-| TC02 | Issue a 4th book to M1 (limit is 3) | `Error: Borrowing limit reached` | `Error: Borrowing limit reached` | PASS |
-| TC03 | M2 borrows B2 after M1 took the only copy | `Error: No copy available` | `Error: No copy available` | PASS |
-| TC04 | M1 borrows the same book twice | `Error: Member already has this book` | `Error: Member already has this book` | PASS |
-| TC05 | Issue to unknown member | `Error: Member not found` | `Error: Member not found` | PASS |
-| TC06 | Issue unknown book | `Error: Book not found` | `Error: Book not found` | PASS |
-| TC07 | Return on due date (15 Oct) - fine | `0` | `0` | PASS |
-| TC08 | Return 5 days late (20 Oct) - fine | `10` | `10` | PASS |
-| TC09 | Return before issue date | `Error: Return date is before issue date` | `Error: Return date is before issue date` | PASS |
-| TC10 | Return a book never issued | `Error: This book was not issued to the member` | `Error: This book was not issued to the member` | PASS |
-| TC11 | Available copies of B2 after issue + return | `1` | `1` | PASS |
-| TC12 | Search 'PYTHON' (case-insensitive) | `['B1', 'B2', 'B4']` | `['B1', 'B2', 'B4']` | PASS |
-| TC13 | Search author 'lutz' | `['B2']` | `['B2']` | PASS |
-| TC14 | Search 'xyz' (no match) | `[]` | `[]` | PASS |
-| TC15 | Overdue report on 25 Oct for B1 issued 1 Oct | `[('Meena', 'Python Crash Course', 10, 20)]` | `[('Meena', 'Python Crash Course', 10, 20)]` | PASS |
-| TC16 | Add 3 more copies of existing B1 (copies, available) | `(5, 5)` | `(5, 5)` | PASS |
-| TC17 | Register the same member id twice | `Error: Member already registered` | `Error: Member already registered` | PASS |
+| TC01 | Grade at 90% | `O` | `O` | PASS |
+| TC02 | Grade at 89.99% | `A+` | `A+` | PASS |
+| TC03 | Grade at 70% | `A` | `A` | PASS |
+| TC04 | Grade at 40% (lowest pass) | `P` | `P` | PASS |
+| TC05 | Grade at 39.99% | `F` | `F` | PASS |
+| TC06 | All subjects 100 | `(500, 100.0, 'O', 'PASS')` | `(500, 100.0, 'O', 'PASS')` | PASS |
+| TC07 | Marks 80,70,60,50,40 (lowest exactly 40) | `(300, 60.0, 'B', 'PASS')` | `(300, 60.0, 'B', 'PASS')` | PASS |
+| TC08 | One subject 39 -> fails whole result | `(439, 87.8, 'F', 'FAIL')` | `(439, 87.8, 'F', 'FAIL')` | PASS |
+| TC09 | Only 4 marks entered | `Error: Exactly 5 marks are required` | `Error: Exactly 5 marks are required` | PASS |
+| TC10 | A mark of 101 | `Error: Marks must be between 0 and 100` | `Error: Marks must be between 0 and 100` | PASS |
+| TC11 | A negative mark | `Error: Marks must be between 0 and 100` | `Error: Marks must be between 0 and 100` | PASS |
+| TC12 | Ties share rank (90,90,80 totals) -> 1,1,3 | `[('A', 1), ('B', 1), ('C', 3)]` | `[('A', 1), ('B', 1), ('C', 3)]` | PASS |
+| TC13 | Class average of totals 500, 250, 390 | `380.0` | `380.0` | PASS |
+| TC14 | Pass percentage (2 of 3 pass) | `66.67` | `66.67` | PASS |
+| TC15 | Topper of the class | `['A']` | `['A']` | PASS |
+| TC16 | Highest mark in Maths (and who) | `(100, ['A'])` | `(100, ['A'])` | PASS |
 
-**Result: 17/17 test cases passed**
+**Result: 16/16 test cases passed**
 
 ## 9. Output
 
-Command: `python library_management.py --demo`
+Command: `python student_result_analyzer.py --demo`
 
 ```text
-Search 'python': ['B1', 'B2', 'B4']
-Due date for B1 (M1): 2026-10-15
-M1 borrows 4th book -> Borrowing limit reached
-M2 borrows B2 (no copy left) -> No copy available
-Overdue report on 25 Oct: [('Meena', 'Python Crash Course', 10, 20), ('Meena', 'Learning Python', 10, 20), ('Meena', 'Automate the Boring Stuff', 10, 20)]
-Fine returning B1 on 10 Oct : 0
-Fine returning B2 on 20 Oct : 10
+Rank Name       Total       %  Grade  Result
+1    Anil         458    91.6      O    PASS
+1    Divya        458    91.6      O    PASS
+3    Bhavya       400    80.0     A+    PASS
+4    Esha         305    61.0      B    PASS
+5    Charan       285    57.0      F    FAIL
+
+Class average      : 381.2
+Standard deviation : 73.77
+Pass percentage    : 80.0 %
+Topper(s)          : Anil, Divya
+Highest in Maths     : 92 (Anil, Divya)
+Highest in Physics   : 88 (Anil, Divya)
+Highest in Chemistry : 95 (Anil, Divya)
+Highest in English   : 85 (Anil, Divya)
+Highest in Python    : 98 (Anil, Divya)
 ```
 
 <!-- Add your own terminal screenshot here:
-![Output screenshot](../screenshots/02_library_management.png) -->
+![Output screenshot](../screenshots/03_student_result_analyzer.png) -->
 
 ## 10. Conclusion
 
-The system correctly manages the full borrow-and-return cycle, including limits, availability and fines calculated from real calendar dates. Using dictionaries for books and members made lookups simple and fast. All 17 test cases pass, covering boundary days (return exactly on the due date gives no fine) and every error path. A database or file could replace the dictionaries later without changing the rules.
+The analyzer turns raw marks into a complete report with correct grading, tie-aware ranking and class statistics. Keeping each calculation in its own function (grade, analyse, class_statistics) made it easy to test every rule separately; all 16 test cases pass, including the grade boundaries (89.99 vs 90) and the rule that one failed subject fails the whole result.

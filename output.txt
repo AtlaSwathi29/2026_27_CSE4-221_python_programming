@@ -1,7 +1,16 @@
-Search 'python': ['B1', 'B2', 'B4']
-Due date for B1 (M1): 2026-10-15
-M1 borrows 4th book -> Borrowing limit reached
-M2 borrows B2 (no copy left) -> No copy available
-Overdue report on 25 Oct: [('Meena', 'Python Crash Course', 10, 20), ('Meena', 'Learning Python', 10, 20), ('Meena', 'Automate the Boring Stuff', 10, 20)]
-Fine returning B1 on 10 Oct : 0
-Fine returning B2 on 20 Oct : 10
+Rank Name       Total       %  Grade  Result
+1    Anil         458    91.6      O    PASS
+1    Divya        458    91.6      O    PASS
+3    Bhavya       400    80.0     A+    PASS
+4    Esha         305    61.0      B    PASS
+5    Charan       285    57.0      F    FAIL
+
+Class average      : 381.2
+Standard deviation : 73.77
+Pass percentage    : 80.0 %
+Topper(s)          : Anil, Divya
+Highest in Maths     : 92 (Anil, Divya)
+Highest in Physics   : 88 (Anil, Divya)
+Highest in Chemistry : 95 (Anil, Divya)
+Highest in English   : 85 (Anil, Divya)
+Highest in Python    : 98 (Anil, Divya)
