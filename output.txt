@@ -1,22 +1,11 @@
-BILL 1
-Item           Qty    Price     Amount
-Notebook        10    60.00     600.00
-Pen Pack         2   120.00     240.00
---------------------------------------
-Subtotal                        840.00
-Discount                         -0.00
-GST                             100.80
-TOTAL                           940.80
+Text: The quick brown fox jumps over the lazy dog. Madam saw a level road near the civic centre! Is the dog lazy or is the fox quick? 
 
-BILL 2 (qualifies for 10% discount)
-Item           Qty    Price     Amount
-Calculator       3   850.00    2550.00
-Backpack         4  1500.00    6000.00
---------------------------------------
-Subtotal                       8550.00
-Discount                       -855.00
-GST                            1385.10
-TOTAL                          9080.10
-
-Low stock items: ['Backpack']
-Bill 3 error: Insufficient stock for Backpack
+words           : 27
+sentences       : 3
+top_words       : [('the', 5), ('dog', 2), ('fox', 2), ('is', 2), ('lazy', 2)]
+longest_word    : centre
+vowels          : 36
+consonants      : 62
+palindromes     : ['civic', 'level', 'madam']
+pangram         : True
+avg_word_length : 3.63
