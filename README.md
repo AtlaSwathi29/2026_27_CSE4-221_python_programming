@@ -1,169 +1,167 @@
-# Case Study 9: Infix Expression Evaluator using Stacks
+# Case Study 10: Railway Ticket Reservation System
 
-> **Files:** [`expression_evaluator.py`](expression_evaluator.py) · [`test_expression_evaluator.py`](test_expression_evaluator.py) · [`output.txt`](output.txt)
+> **Files:** [`railway_reservation.py`](railway_reservation.py) · [`test_railway_reservation.py`](test_railway_reservation.py) · [`output.txt`](output.txt)
 
 ## 1. Problem Statement
 
-Write a program that evaluates arithmetic expressions typed by the user, such as `3 + 4 * (2 - 1) ^ 2`, without using Python's `eval()`. It must follow the correct operator precedence and associativity, support brackets, decimal numbers, unary minus and the power operator, and report errors such as mismatched brackets, division by zero and invalid input.
+Design a ticket reservation system for one train. The train has a limited number of confirmed seats, then RAC (Reservation Against Cancellation) places, then a waiting list. A new booking gets the best status available. When a ticket is cancelled, passengers move up automatically (RAC to Confirmed, Waiting to RAC) and a refund is calculated. Fares depend on distance and passenger age.
 
 ## 2. Objectives
 
-- Understand the stack data structure (LIFO) and implement it with Python lists.
-- Implement the Shunting-yard algorithm to convert infix expressions to postfix.
-- Evaluate a postfix expression with a stack.
-- Handle operator precedence, left/right associativity and unary operators.
-- Practise robust error handling for malformed input.
+- Use classes, lists as queues (first come, first served) and dictionaries for tickets.
+- Implement automatic promotion logic between three queues.
+- Apply business rules for fares (child and senior concessions) and refunds.
+- Generate unique PNR numbers and validate all inputs.
 
 ## 3. Assumptions
 
-- Supported operators: `+  -  *  /  ^` (power) and brackets `( )`.
-- Precedence from low to high: `+ -`, then `* /`, then unary minus, then `^`. Power is right-associative (2^3^2 = 512).
-- Unary minus is allowed at the start, after `(`, or after another operator; `-2^2` equals -4.
-- Numbers may have a decimal point; results that are whole numbers are shown without `.0`.
-- Variables and functions (sin, log, ...) are not supported.
+- One train; the capacity of each category is set when the train is created (demo: 2 confirmed, 1 RAC, 1 waiting).
+- Fare = distance in km x rate per km (Rs. 1.5); children under 5 travel free; passengers aged 60 or more pay 60% of the fare.
+- Refund is 75% of the fare for Confirmed/RAC tickets and 100% for a waiting-list ticket.
+- PNR numbers start from 1001 and increase by 1; cancelled tickets stay in the record with status CANCELLED.
+- One ticket per passenger; seat numbers are not allotted.
 
 ## 4. Algorithm
 
-1. **Tokenize:** scan the text; read whole numbers (including decimals); treat `+ - * / ^ ( )` as tokens; a `-` at the start or after an operator or `(` becomes a unary-minus token; reject any other character.
-2. **Convert to postfix (Shunting-yard):** keep an output list and an operator stack.
-3. Number -> output. `(` -> push. `)` -> pop operators to the output until `(` is found (error if none).
-4. Unary minus -> push. Binary operator -> while the stack top has higher precedence (or equal precedence and the operator is left-associative) pop it to the output; then push the operator.
-5. At the end pop all remaining operators to the output (error if a `(` remains).
-6. **Evaluate postfix:** scan the output; push numbers; for an operator pop the needed operands, compute, push the result (error on division by zero, missing operands or a non-real result).
-7. At the end exactly one value must remain on the stack - that is the answer; otherwise the expression is invalid. Stop.
+1. Start. Create the train with the three capacities and empty queues.
+2. **Book:** validate name, age (0-120) and distance (> 0). Calculate the fare using the age rules.
+3. Choose the first queue that has space in this order: CONFIRMED, RAC, WL. If none has space show "Train is full".
+4. Create a PNR, store the ticket and add the PNR to the chosen queue.
+5. **Cancel:** check the PNR exists and is not already cancelled. Remove it from its queue and set status CANCELLED. Refund = 100% if it was WL, else 75%.
+6. If a CONFIRMED ticket was cancelled and the RAC queue is not empty, move the first RAC passenger to CONFIRMED.
+7. If a CONFIRMED or RAC ticket was cancelled and the waiting list is not empty, move the first WL passenger to RAC.
+8. **Status:** return the current status of a PNR. Repeat the menu until Exit. Stop.
 
 ## 5. Pseudocode
 
 ```text
-FUNCTION to_postfix(tokens)
-    output <- empty list;  stack <- empty stack
-    FOR EACH token IN tokens
-        IF token is a number THEN APPEND token TO output
-        ELSE IF token = "(" THEN PUSH token
-        ELSE IF token = ")" THEN
-            WHILE stack not empty AND top != "(": APPEND POP() TO output
-            IF stack is empty THEN error "Mismatched parentheses"
-            POP "("
-        ELSE IF token = unary minus THEN PUSH token
-        ELSE                                       // binary operator
-            WHILE stack not empty AND top != "(" AND
-                  (prec(top) > prec(token) OR (prec(top) = prec(token) AND token is left-associative))
-                APPEND POP() TO output
-            PUSH token
-    WHILE stack not empty
-        IF top = "(" THEN error "Mismatched parentheses"
-        APPEND POP() TO output
-    RETURN output
+FUNCTION book(name, age, distance)
+    validate name, age, distance
+    fare <- distance * rate
+    IF age < 5 THEN fare <- 0 ELSE IF age >= 60 THEN fare <- fare * 0.60
+    FOR EACH queue IN ["CONFIRMED", "RAC", "WL"]
+        IF length(queues[queue]) < capacity[queue] THEN status <- queue; BREAK
+    IF no status found THEN error "Train is full"
+    create ticket with next PNR, fare, status; APPEND PNR TO queues[status]
+    RETURN ticket
+END FUNCTION
+
+FUNCTION cancel(pnr)
+    ticket <- tickets[pnr]  (error if missing or already cancelled)
+    old <- ticket.status;  remove pnr from queues[old];  ticket.status <- "CANCELLED"
+    refund <- fare * (1.00 IF old = "WL" ELSE 0.75)
+    IF old = "CONFIRMED" AND RAC not empty THEN move first of RAC to CONFIRMED
+    IF old IN ("CONFIRMED", "RAC") AND WL not empty THEN move first of WL to RAC
+    RETURN refund
 END FUNCTION
 ```
 
 ## 6. Flowchart
 
-### 6.1 Overall process
+### 6.1 Book a ticket
 
 ```mermaid
 flowchart TD
-    A(["Start"]) --> B[/"Read expression"/]
-    B --> C{"Expression empty?"}
-    C -- Yes --> ERR[/"Show error message"/]
-    C -- No --> D["Tokenize: numbers, operators, brackets, unary minus"]
-    D --> E["Shunting-yard: infix to postfix using an operator stack"]
-    E --> F["Evaluate postfix using a number stack"]
-    F --> G{"Exactly one value left?"}
-    G -- No --> ERR
-    G -- Yes --> H[/"Print result"/]
-    H --> Z(["End"])
+    A(["Start booking"]) --> B[/"Read name, age, distance"/]
+    B --> C{"Details valid?"}
+    C -- No --> ERR[/"Show error message"/]
+    C -- Yes --> D["fare = distance x rate; under 5 free, 60 or above pay 60 percent"]
+    D --> E{"Confirmed seats free?"}
+    E -- Yes --> S1["Status = CONFIRMED"]
+    E -- No --> F{"RAC places free?"}
+    F -- Yes --> S2["Status = RAC"]
+    F -- No --> G{"Waiting list has space?"}
+    G -- Yes --> S3["Status = WL"]
+    G -- No --> ERR2[/"Train is full"/]
+    S1 --> H["Generate PNR and store ticket"]
+    S2 --> H
+    S3 --> H
+    H --> I[/"Show PNR, fare and status"/]
+    I --> Z(["End"])
     ERR --> Z
+    ERR2 --> Z
 ```
 
-### 6.2 Shunting-yard conversion
+### 6.2 Cancel a ticket
 
 ```mermaid
 flowchart TD
-    A(["Take next token"]) --> B{"Token type?"}
-    B -- "Number" --> C["Append to output"]
-    B -- "Open bracket or unary minus" --> D["Push on stack"]
-    B -- "Close bracket" --> E["Pop operators to output until open bracket"]
-    E --> F{"Open bracket found?"}
-    F -- No --> ERR[/"Mismatched parentheses"/]
-    F -- Yes --> G["Discard the open bracket"]
-    B -- "Binary operator" --> H["Pop to output while top has higher precedence, or equal and left-associative"]
-    H --> I["Push the operator"]
-    C --> J{"More tokens?"}
-    D --> J
-    G --> J
+    A(["Start cancel"]) --> B[/"Read PNR"/]
+    B --> C{"PNR exists and not already cancelled?"}
+    C -- No --> ERR[/"Show error message"/]
+    C -- Yes --> D["Remove from its queue, status = CANCELLED"]
+    D --> E["Refund = 100 percent if WL, otherwise 75 percent"]
+    E --> F{"Was CONFIRMED and RAC queue not empty?"}
+    F -- Yes --> G["First RAC passenger becomes CONFIRMED"]
+    F -- No --> H{"Was CONFIRMED or RAC and waiting list not empty?"}
+    G --> H
+    H -- Yes --> I["First WL passenger becomes RAC"]
+    H -- No --> J[/"Show refund"/]
     I --> J
-    J -- Yes --> A
-    J -- No --> K["Pop all remaining operators to output"]
-    K --> L(["Postfix ready"])
+    J --> Z(["End"])
+    ERR --> Z
 ```
 
 ## 7. Source Code
 
-The complete, commented program is in [`expression_evaluator.py`](expression_evaluator.py). It uses only the Python standard library (Python 3.8 or later).
+The complete, commented program is in [`railway_reservation.py`](railway_reservation.py). It uses only the Python standard library (Python 3.8 or later).
 
 ```bash
-python expression_evaluator.py          # interactive menu / input
-python expression_evaluator.py --demo   # automatic sample run
+python railway_reservation.py          # interactive menu / input
+python railway_reservation.py --demo   # automatic sample run
 ```
 
 ## 8. Test Cases
 
-Test file: `test_expression_evaluator.py` (run `python test_expression_evaluator.py` or add `--table` for this table).
+Test file: `test_railway_reservation.py` (run `python test_railway_reservation.py` or add `--table` for this table).
 
 | TC | Scenario / Input | Expected Output | Actual Output | Result |
 |----|------------------|-----------------|---------------|--------|
-| TC01 | 2 + 3 * 4  (multiplication first) | `14` | `14` | PASS |
-| TC02 | (2 + 3) * 4  (brackets first) | `20` | `20` | PASS |
-| TC03 | 10 / 4  (decimal result) | `2.5` | `2.5` | PASS |
-| TC04 | 100 - 10 - 5  (left to right) | `85` | `85` | PASS |
-| TC05 | 100 / 10 / 5  (left to right) | `2` | `2` | PASS |
-| TC06 | 2 ^ 3 ^ 2  (power is right-to-left) | `512` | `512` | PASS |
-| TC07 | -2 ^ 2  (unary minus after power) | `-4` | `-4` | PASS |
-| TC08 | 2 * -3  (unary minus after operator) | `-6` | `-6` | PASS |
-| TC09 | 5 - -3 | `8` | `8` | PASS |
-| TC10 | -(2 + 3) | `-5` | `-5` | PASS |
-| TC11 | +5 + 3  (unary plus) | `8` | `8` | PASS |
-| TC12 | 1.5 + 2.5  (decimals) | `4` | `4` | PASS |
-| TC13 | 2 ^ -2 | `0.25` | `0.25` | PASS |
-| TC14 | ((1+2)*(3+4))/7  (nested brackets, no spaces) | `3` | `3` | PASS |
-| TC15 | 3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3  (classic example) | `3.000122` | `3.000122` | PASS |
-| TC16 | Postfix of 2 + 3 * 4 | `2 3 4 * +` | `2 3 4 * +` | PASS |
-| TC17 | Postfix of (2 + 3) * 4 | `2 3 + 4 *` | `2 3 + 4 *` | PASS |
-| TC18 | Missing closing bracket: (2 + 3 | `Error: Mismatched parentheses` | `Error: Mismatched parentheses` | PASS |
-| TC19 | Extra closing bracket: 2 + 3) | `Error: Mismatched parentheses` | `Error: Mismatched parentheses` | PASS |
-| TC20 | Division by zero: 5 / 0 | `Error: Division by zero` | `Error: Division by zero` | PASS |
-| TC21 | Operator without operand: 2 + | `Error: Invalid expression` | `Error: Invalid expression` | PASS |
-| TC22 | Two numbers, no operator: 2 3 | `Error: Invalid expression` | `Error: Invalid expression` | PASS |
-| TC23 | Empty brackets: () | `Error: Invalid expression` | `Error: Invalid expression` | PASS |
-| TC24 | Invalid character: 7 & 2 | `Error: Invalid character: &` | `Error: Invalid character: &` | PASS |
-| TC25 | Bad number: 1.2.3 + 1 | `Error: Invalid number: 1.2.3` | `Error: Invalid number: 1.2.3` | PASS |
-| TC26 | Square root of negative: (-8) ^ 0.5 | `Error: Result is not a real number` | `Error: Result is not a real number` | PASS |
-| TC27 | Empty expression | `Error: Expression is empty` | `Error: Expression is empty` | PASS |
+| TC01 | Fare: adult (age 30), 400 km at Rs.1.5/km | `600.0` | `600.0` | PASS |
+| TC02 | Fare: senior citizen (age 65) - 40% concession | `360.0` | `360.0` | PASS |
+| TC03 | Fare: exactly age 60 gets concession | `360.0` | `360.0` | PASS |
+| TC04 | Fare: child age 3 travels free | `0.0` | `0.0` | PASS |
+| TC05 | Fare: age 5 pays full fare | `600.0` | `600.0` | PASS |
+| TC06 | Status of four bookings in order | `['CONFIRMED', 'CONFIRMED', 'RAC', 'WL']` | `['CONFIRMED', 'CONFIRMED', 'RAC', 'WL']` | PASS |
+| TC07 | First PNR number issued | `1001` | `1001` | PASS |
+| TC08 | Fifth booking when train is full | `Error: Train is full - no booking possible` | `Error: Train is full - no booking possible` | PASS |
+| TC09 | Cancel confirmed 1001: statuses of 1002, 1003, 1004 | `['CONFIRMED', 'CONFIRMED', 'RAC']` | `['CONFIRMED', 'CONFIRMED', 'RAC']` | PASS |
+| TC10 | Cancel RAC 1003: statuses of 1001, 1002, 1004 | `['CONFIRMED', 'CONFIRMED', 'RAC']` | `['CONFIRMED', 'CONFIRMED', 'RAC']` | PASS |
+| TC11 | Cancel waiting 1004: statuses of 1001, 1002, 1003 | `['CONFIRMED', 'CONFIRMED', 'RAC']` | `['CONFIRMED', 'CONFIRMED', 'RAC']` | PASS |
+| TC12 | Refund for a confirmed ticket (75% of Rs.600) | `450.0` | `450.0` | PASS |
+| TC13 | Refund for an RAC ticket (75% of Rs.600) | `450.0` | `450.0` | PASS |
+| TC14 | Refund for a waiting-list ticket (100% of Rs.600) | `600.0` | `600.0` | PASS |
+| TC15 | New booking after a cancellation frees the waiting list | `WL` | `WL` | PASS |
+| TC16 | Cancel the same ticket twice | `Error: Ticket already cancelled` | `Error: Ticket already cancelled` | PASS |
+| TC17 | Cancel unknown PNR | `Error: PNR not found` | `Error: PNR not found` | PASS |
+| TC18 | Age 150 | `Error: Invalid age` | `Error: Invalid age` | PASS |
+| TC19 | Blank passenger name | `Error: Passenger name cannot be empty` | `Error: Passenger name cannot be empty` | PASS |
+| TC20 | Distance 0 km | `Error: Distance must be positive` | `Error: Distance must be positive` | PASS |
 
-**Result: 27/27 test cases passed**
+**Result: 20/20 test cases passed**
 
 ## 9. Output
 
-Command: `python expression_evaluator.py --demo`
+Command: `python railway_reservation.py --demo`
 
 ```text
-2 + 3 * 4                        = 14
-(2 + 3) * 4                      = 20
-10 / 4                           = 2.5
-2 ^ 3 ^ 2                        = 512
--2 ^ 2                           = -4
-2 * -3                           = -6
-3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3    = 3.000122
-(2 + 3                           -> Error: Mismatched parentheses
-5 / 0                            -> Error: Division by zero
-2 +                              -> Error: Invalid expression
-7 & 2                            -> Error: Invalid character: &
+Booking tickets (2 confirmed, 1 RAC, 1 waiting)
+  PNR 1001  Asha   age 30  fare Rs.600.0    CONFIRMED
+  PNR 1002  Ravi   age 65  fare Rs.360.0    CONFIRMED
+  PNR 1003  Meena  age 3   fare Rs.0.0      RAC
+  PNR 1004  Kiran  age 40  fare Rs.600.0    WL
+  Extra passenger -> Train is full - no booking possible
+
+Cancelling PNR 1001 (Asha, confirmed)
+  Refund: Rs. 450.0
+  PNR 1002 is now CONFIRMED
+  PNR 1003 is now CONFIRMED
+  PNR 1004 is now RAC
 ```
 
 <!-- Add your own terminal screenshot here:
-![Output screenshot](../screenshots/09_expression_evaluator.png) -->
+![Output screenshot](../screenshots/10_railway_reservation.png) -->
 
 ## 10. Conclusion
 
-The evaluator correctly handles precedence, associativity, brackets, unary minus and decimal numbers using two stacks and the Shunting-yard algorithm, with no use of `eval()`. The 27 test cases (including `2^3^2 = 512`, `-2^2 = -4` and the classic textbook example) pass, and every malformed input is reported with a clear message. The same idea is used inside compilers, calculators and spreadsheet engines.
+The reservation system correctly assigns Confirmed, RAC and Waiting status, promotes passengers in the right order after cancellations and calculates fares and refunds using the stated rules. The 20 test cases cover every status transition, boundary ages (4, 5, 60) and all error conditions, and they pass. Using lists as first-come-first-served queues showed how a simple data structure models a real-world process.

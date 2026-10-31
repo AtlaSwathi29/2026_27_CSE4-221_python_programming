@@ -1,11 +1,12 @@
-2 + 3 * 4                        = 14
-(2 + 3) * 4                      = 20
-10 / 4                           = 2.5
-2 ^ 3 ^ 2                        = 512
--2 ^ 2                           = -4
-2 * -3                           = -6
-3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3    = 3.000122
-(2 + 3                           -> Error: Mismatched parentheses
-5 / 0                            -> Error: Division by zero
-2 +                              -> Error: Invalid expression
-7 & 2                            -> Error: Invalid character: &
+Booking tickets (2 confirmed, 1 RAC, 1 waiting)
+  PNR 1001  Asha   age 30  fare Rs.600.0    CONFIRMED
+  PNR 1002  Ravi   age 65  fare Rs.360.0    CONFIRMED
+  PNR 1003  Meena  age 3   fare Rs.0.0      RAC
+  PNR 1004  Kiran  age 40  fare Rs.600.0    WL
+  Extra passenger -> Train is full - no booking possible
+
+Cancelling PNR 1001 (Asha, confirmed)
+  Refund: Rs. 450.0
+  PNR 1002 is now CONFIRMED
+  PNR 1003 is now CONFIRMED
+  PNR 1004 is now RAC
